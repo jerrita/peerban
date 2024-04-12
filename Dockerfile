@@ -1,14 +1,11 @@
-FROM rust as builder-amd64
-ENV TARGET x86_64-unknown-linux-musl
+FROM --platform=linux/amd64 messense/rust-musl-cross:x86_64-musl as builder-amd64
+FROM --platform=linux/amd64 messense/rust-musl-cross:aarch64-musl as builder-arm64
 
-FROM rust as builder-arm64
-ENV TARGET aarch64-unknown-linux-musl
-
-FROM builder-${TARGETARCH} as builder
+FROM --platform=linux/amd64 builder-${TARGETARCH} as builder
 WORKDIR /usr/src/peerban
 COPY . .
-RUN rustup target add ${TARGET}
-RUN cargo build --profile opt --target ${TARGET}
+RUN cargo build --profile opt \
+    && musl-strip target/*/opt/peerban
 
 FROM scratch
 COPY --from=builder /usr/src/peerban/target/*/opt/peerban /
