@@ -1,0 +1,61 @@
+name: Rust Build and Release
+
+on:
+  push:
+    paths:
+      - '**/*.rs'
+      - 'Cargo.toml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            ${{ matrix.os == 'windows-latest' && 'target/${{ matrix.target }}/release/peerban.exe' || 'target/${{ matrix.target }}/release/peerban' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          path: release_binaries
+
+      - name: Get version
+        id: vars
+        run: |
+          echo "::set-output name=version::$(cargo pkgid | cut -d# -f2 | cut -d: -f2)"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release_binaries/**
+          tag_name: ${{ steps.vars.outputs.version }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
