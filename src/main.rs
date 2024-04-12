@@ -1,5 +1,5 @@
 use clap::Parser;
-use log::{error, warn};
+use log::{error, info, warn};
 
 use crate::backend::qb::QBitBackend;
 use crate::daemon::Daemon;
@@ -35,6 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.backend != "qb" {
         panic!("Invalid backend, only qb is supported now.");
     }
+
+    info!("PeerBan/{} started.", env!("CARGO_PKG_VERSION"));
 
     let qb = QBitBackend::new(args.endpoint, args.auth);
     let mut daemon = Daemon::new(Box::new(qb), args.scan, args.clear);

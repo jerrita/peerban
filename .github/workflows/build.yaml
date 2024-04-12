@@ -1,0 +1,64 @@
+name: Rust Build and Release
+
+on:
+  push:
+    paths:
+      - '**/*.rs'
+      - 'Cargo.toml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Windows Build
+        if: matrix.os == 'windows-latest'
+        run: |
+          cargo build --profile opt --target ${{ matrix.target }}
+          mkdir -p build
+          cp target/*/opt/peerban.exe build/peerban-${{ matrix.target }}.exe
+
+      - name: Linux Build
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo build --release --target ${{ matrix.target }}
+          mkdir -p build
+          cp target/*/opt/peerban build/peerban-${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: build/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release_binaries
+
+      - name: Get version
+        run: |
+          echo "VERSION=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)" > $GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release_binaries/**
+          tag_name: ${{ env.VERSION }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}

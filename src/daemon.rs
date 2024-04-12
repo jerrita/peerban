@@ -35,7 +35,7 @@ impl Daemon {
     }
 
     pub async fn run(&mut self) -> Result<()> {
-        info!("Backend: {}", self.backend.describe().await?);
+        info!("Backend @ {}", self.backend.describe().await?);
         info!("[interval] scan: {}s", self.scan_time);
         let mut stat = Statistic {
             torrents: 0,
@@ -44,7 +44,7 @@ impl Daemon {
         };
         if self.clear {
             self.backend.ban_clear().await?;
-            info!("[start] jail cleared.");
+            info!("[startup] jail cleared.");
         }
         loop {
             let mut flag = false;
@@ -58,7 +58,8 @@ impl Daemon {
                 for peer in peers {
                     if self.banned.iter().any(|banned| banned.peer == peer) {
                         warn!("Peer {}({}) is already banned.", peer.address, peer.id);
-                        continue;
+                        warn!("Maybe manually cleared by web. Clearing local cache.");
+                        self.banned.retain(|banned| banned.peer != peer);
                     }
 
                     for rule in &self.rules {
