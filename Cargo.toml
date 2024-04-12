@@ -20,4 +20,4 @@ regex = "1.10.4"
 [profile.opt]
 inherits = "release"
 strip = true
-lto = "thin"
+lto = true
