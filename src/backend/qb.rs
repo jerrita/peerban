@@ -83,6 +83,7 @@ impl Backend for QBitBackend {
             name: t.get("name").unwrap().as_str().unwrap().to_string(),
             hash: t.get("hash").unwrap().as_str().unwrap().to_string(),
             size: t.get("size").unwrap().as_u64().unwrap(),
+            tracker: t.get("tracker").unwrap().as_str().unwrap().to_string(),
         }).collect())
     }
 

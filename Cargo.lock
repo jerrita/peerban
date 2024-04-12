@@ -472,6 +472,7 @@ dependencies = [
  "env_logger",
  "lazy_static",
  "log",
+ "regex",
  "reqwest",
  "serde_json",
  "tokio",

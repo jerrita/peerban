@@ -20,6 +20,8 @@ struct Args {
     auth: String,
     #[arg(short, long, default_value = "5", help = "Scan interval in seconds.")]
     scan: u64,
+    #[arg(short, long, default_value = "false", help = "Handle private tracker torrents.")]
+    pt: bool,
     #[arg(short, long, default_value = "false", help = "Clear all bans before start.")]
     clear: bool,
 }
@@ -39,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("PeerBan/{} started.", env!("CARGO_PKG_VERSION"));
 
     let qb = QBitBackend::new(args.endpoint, args.auth);
-    let mut daemon = Daemon::new(Box::new(qb), args.scan, args.clear);
+    let mut daemon = Daemon::new(Box::new(qb), args.scan, args.pt, args.clear);
     loop {
         match daemon.run().await {
             Ok(_) => (),

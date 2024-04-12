@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::time::Instant;
 
 use anyhow::Result;
@@ -7,6 +8,8 @@ use crate::backend::Backend;
 use crate::peer::BannedPeer;
 use crate::rules::preload::PREDEFINED_RULES;
 use crate::rules::Rule;
+
+const PT_KEYWORDS: [&str; 5] = ["?passkey=", "?authkey=", "?secure=", "?credential=", "private"];
 
 struct Statistic {
     pub torrents: u64,
@@ -19,17 +22,19 @@ pub struct Daemon {
     banned: Vec<BannedPeer>,
     rules: Vec<Rule>,
     scan_time: u64,
+    pt: bool,
     clear: bool,
 }
 
 impl Daemon {
-    pub fn new(backend: Box<dyn Backend>, scan: u64, clear: bool) -> Self {
+    pub fn new(backend: Box<dyn Backend>, scan: u64, pt: bool, clear: bool) -> Self {
         let rules = PREDEFINED_RULES.clone();
         Daemon {
             backend,
             banned: Vec::new(),
             rules,
             scan_time: scan,
+            pt,
             clear,
         }
     }
@@ -46,13 +51,25 @@ impl Daemon {
             self.backend.ban_clear().await?;
             info!("[startup] jail cleared.");
         }
+        let re = Regex::new(r"([a-zA-Z0-9]{32})").unwrap();
         loop {
             let mut flag = false;
             let torrents = self.backend.get_uploading_torrents().await?;
             stat.torrents = torrents.len() as u64;
             stat.peers = 0;
             for torrent in torrents {
-                debug!("Torrent: {}({})", torrent.name, torrent.hash);
+                if !self.pt && !torrent.tracker.is_empty() {
+                    let lower_tracker = torrent.tracker.to_lowercase();
+                    if PT_KEYWORDS.iter().any(|&keyword| lower_tracker.contains(keyword)) || re.is_match(&lower_tracker) {
+                        debug!("Private tracker torrent: {}({})", torrent.name, torrent.hash);
+                        continue;
+                    } else {
+                        debug!("Torrent: {}({})", torrent.name, torrent.hash);
+                    }
+                } else {
+                    debug!("Torrent: {}({})", torrent.name, torrent.hash);
+                }
+
                 let peers = self.backend.get_peers(&torrent.hash).await?;
                 stat.peers += peers.len() as u64;
                 for peer in peers {
