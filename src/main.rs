@@ -8,7 +8,6 @@ mod backend;
 mod torrent;
 mod peer;
 mod rules;
-mod conf;
 mod daemon;
 
 #[derive(Parser, Debug)]
@@ -19,6 +18,10 @@ struct Args {
     endpoint: String,
     #[arg(short, long, default_value = "admin:admin")]
     auth: String,
+    #[arg(short, long, default_value = "5", help = "Scan interval in seconds.")]
+    scan: u64,
+    #[arg(short, long, default_value = "false", help = "Clear all bans before start.")]
+    clear: bool,
 }
 
 #[tokio::main]
@@ -34,8 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let qb = QBitBackend::new(args.endpoint, args.auth);
-    let conf = conf::PeerBanConfig::default();
-    let mut daemon = Daemon::new(Box::new(qb), conf);
+    let mut daemon = Daemon::new(Box::new(qb), args.scan, args.clear);
     loop {
         match daemon.run().await {
             Ok(_) => (),

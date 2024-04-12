@@ -4,7 +4,7 @@ use crate::peer::Peer;
 
 pub mod preload;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum RuleType {
     IDPrefixMatch,
     IDContains,
@@ -57,9 +57,13 @@ impl From<&str> for Rule {
         if split.clone().count() != 2 {
             panic!("Invalid rule string, use class@value format.");
         }
+        let class = split.next().unwrap().into();
         Rule {
-            class: split.next().unwrap().into(),
-            value: split.next().unwrap().into(),
+            class,
+            value: match class {
+                RuleType::ProgressProbe | RuleType::ExcessiveProbe => Value::Number(split.next().unwrap().parse().unwrap()),
+                _ => Value::String(split.next().unwrap().to_string()),
+            },
         }
     }
 }

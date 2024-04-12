@@ -122,4 +122,16 @@ impl Backend for QBitBackend {
             .await?;
         Ok(())
     }
+
+    async fn ban_clear(&self) -> Result<()> {
+        let mut form = HashMap::new();
+        form.insert("json", serde_json::json!({"banned_IPs": ""}).to_string());
+        reqwest::Client::new()
+            .post(&format!("{}/app/setPreferences", self.endpoint))
+            .header("Cookie", self.cookie.clone().unwrap())
+            .form(&form)
+            .send()
+            .await?;
+        Ok(())
+    }
 }

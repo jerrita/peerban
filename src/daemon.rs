@@ -4,57 +4,48 @@ use anyhow::Result;
 use log::{debug, info, warn};
 
 use crate::backend::Backend;
-use crate::conf::PeerBanConfig;
 use crate::peer::BannedPeer;
-use crate::rules::{Rule, RuleType};
 use crate::rules::preload::PREDEFINED_RULES;
+use crate::rules::Rule;
 
 struct Statistic {
     pub torrents: u64,
     pub peers: u64,
     pub banned: u64,
-    pub released: u64,
 }
 
 pub struct Daemon {
     backend: Box<dyn Backend>,
-    conf: PeerBanConfig,
     banned: Vec<BannedPeer>,
     rules: Vec<Rule>,
+    scan_time: u64,
+    clear: bool,
 }
 
 impl Daemon {
-    pub fn new(backend: Box<dyn Backend>, conf: PeerBanConfig) -> Self {
-        let mut rules = PREDEFINED_RULES.clone();
-        if conf.block_progress_fallback {
-            rules.push(Rule {
-                class: RuleType::ProgressProbe,
-                value: conf.block_progress_fallback_threshold.into(),
-            });
-        }
-        if conf.block_excessive_clients {
-            rules.push(Rule {
-                class: RuleType::ExcessiveProbe,
-                value: conf.block_excessive_clients_threshold.into(),
-            });
-        }
+    pub fn new(backend: Box<dyn Backend>, scan: u64, clear: bool) -> Self {
+        let rules = PREDEFINED_RULES.clone();
         Daemon {
             backend,
-            conf,
             banned: Vec::new(),
             rules,
+            scan_time: scan,
+            clear,
         }
     }
 
     pub async fn run(&mut self) -> Result<()> {
         info!("Backend: {}", self.backend.describe().await?);
-        info!("[interval] scan: {}s, block: {}s", self.conf.scan_time, self.conf.block_time);
+        info!("[interval] scan: {}s", self.scan_time);
         let mut stat = Statistic {
             torrents: 0,
             peers: 0,
             banned: 0,
-            released: 0,
         };
+        if self.clear {
+            self.backend.ban_clear().await?;
+            info!("[start] jail cleared.");
+        }
         loop {
             let mut flag = false;
             let torrents = self.backend.get_uploading_torrents().await?;
@@ -87,24 +78,11 @@ impl Daemon {
                         }
                     }
                 }
-
-                // Remove expired banned peers
-                let now = Instant::now();
-                self.banned.retain(|banned| {
-                    if now.duration_since(banned.time).as_secs() > self.conf.block_time {
-                        flag = true;
-                        stat.released += 1;
-                        info!("Released {}({}) {:?}.", banned.peer.address, banned.peer.id, banned.rule);
-                        false
-                    } else {
-                        true
-                    }
-                });
             }
             if flag {
-                info!("[active] torrents: {}, peers: {}, banned: {}, released: {}", stat.torrents, stat.peers, stat.banned, stat.released);
+                info!("[active] torrents: {}, peers: {}, banned: {}", stat.torrents, stat.peers, stat.banned);
             }
-            tokio::time::sleep(tokio::time::Duration::from_secs(self.conf.scan_time)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(self.scan_time)).await;
         }
     }
 }
