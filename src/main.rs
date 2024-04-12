@@ -12,17 +12,17 @@ mod daemon;
 
 #[derive(Parser, Debug)]
 struct Args {
-    #[arg(short, long, default_value = "qb")]
+    #[arg(short, long, env, default_value = "qb")]
     backend: String,
-    #[arg(short, long, default_value = "http://127.0.0.1:8080")]
+    #[arg(short, long, env, default_value = "http://127.0.0.1:8080")]
     endpoint: String,
-    #[arg(short, long, default_value = "admin:admin")]
+    #[arg(short, long, env, default_value = "admin:admin")]
     auth: String,
-    #[arg(short, long, default_value = "5", help = "Scan interval in seconds.")]
+    #[arg(short, long, env, default_value = "5", help = "Scan interval in seconds.")]
     scan: u64,
-    #[arg(short, long, default_value = "false", help = "Handle private tracker torrents.")]
+    #[arg(long, env, default_value = "false", help = "Handle private tracker torrents.")]
     pt: bool,
-    #[arg(short, long, default_value = "false", help = "Clear all bans before start.")]
+    #[arg(long, env, default_value = "false", help = "Clear all bans before start.")]
     clear: bool,
 }
 

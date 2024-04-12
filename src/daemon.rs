@@ -1,8 +1,8 @@
-use regex::Regex;
 use std::time::Instant;
 
 use anyhow::Result;
 use log::{debug, info, warn};
+use regex::Regex;
 
 use crate::backend::Backend;
 use crate::peer::BannedPeer;
@@ -58,16 +58,13 @@ impl Daemon {
             stat.torrents = torrents.len() as u64;
             stat.peers = 0;
             for torrent in torrents {
-                if !self.pt && !torrent.tracker.is_empty() {
+                debug!("Torrent: {}({})", torrent.name, torrent.hash);
+                if !self.pt {
                     let lower_tracker = torrent.tracker.to_lowercase();
                     if PT_KEYWORDS.iter().any(|&keyword| lower_tracker.contains(keyword)) || re.is_match(&lower_tracker) {
-                        debug!("Private tracker torrent: {}({})", torrent.name, torrent.hash);
+                        debug!("Private tracker detect.");
                         continue;
-                    } else {
-                        debug!("Torrent: {}({})", torrent.name, torrent.hash);
                     }
-                } else {
-                    debug!("Torrent: {}({})", torrent.name, torrent.hash);
                 }
 
                 let peers = self.backend.get_peers(&torrent.hash).await?;

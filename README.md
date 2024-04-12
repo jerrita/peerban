@@ -6,11 +6,12 @@
 Usage: peerban [OPTIONS]
 
 Options:
-  -b, --backend <BACKEND>    [default: qb]
-  -e, --endpoint <ENDPOINT>  [default: http://127.0.0.1:8080]
-  -a, --auth <AUTH>          [default: admin:admin]
-  -s, --scan <SCAN>          Scan interval in seconds. [default: 5]
-  -c, --clear                Clear all bans before start.
+  -b, --backend <BACKEND>    [env: BACKEND=] [default: qb]
+  -e, --endpoint <ENDPOINT>  [env: ENDPOINT=] [default: http://127.0.0.1:8080]
+  -a, --auth <AUTH>          [env: AUTH=] [default: admin:admin]
+  -s, --scan <SCAN>          Scan interval in seconds. [env: SCAN=] [default: 5]
+      --pt                   Handle private tracker torrents. [env: PT=]
+      --clear                Clear all bans before start. [env: CLEAR=]
   -h, --help                 Print help
 ```
 
