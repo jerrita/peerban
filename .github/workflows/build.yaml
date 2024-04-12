@@ -41,21 +41,21 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v3
         with:
           path: release_binaries
 
       - name: Get version
-        id: vars
         run: |
-          echo "::set-output name=version::$(cargo pkgid | cut -d# -f2 | cut -d: -f2)"
+          echo "VERSION=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)" > $GITHUB_ENV
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: release_binaries/**
-          tag_name: ${{ steps.vars.outputs.version }}
+          tag_name: ${{ env.VERSION }}
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
