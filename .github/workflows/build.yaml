@@ -19,13 +19,16 @@ jobs:
             os: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: ${{ matrix.target }}
           override: true
+
+      - uses: GuillaumeFalourd/setup-windows10-sdk-action@v2
+        if: matrix.os == 'windows-latest'
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
