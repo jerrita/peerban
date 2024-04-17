@@ -27,11 +27,28 @@ Options:
 
 ## Installation
 
+### From Source
+
 ```shell
 cargo install --git https://github.com/jerrita/peerban
 ```
+### Docker
 
-> Docker & Binary is WIP
+```yaml
+services:
+  peerban:
+    image: ghcr.io/jerrita/peerban:latest
+    container_name: peerban
+    restart: unless-stopped
+    environment:
+      - BACKEND=qb
+      - ENDPOINT=http://your-qbittorrent:8080
+      - AUTH=user:password
+      - SCAN=5
+      - PT=false  # use the same logic on PT trackers, default skip
+      - CLEAR=false  # clear all bans before start, default false
+    network_mode: host
+```
 
 ## Backend Supports
 
@@ -47,7 +64,7 @@ cargo install --git https://github.com/jerrita/peerban
 ## RoadMap
 
 - [x] ProtoType
-- [ ] Container
+- [x] Containerize
 - [ ] WebUI
 - [ ] Rule Hot-Update
 

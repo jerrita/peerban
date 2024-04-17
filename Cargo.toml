@@ -1,6 +1,6 @@
 [package]
 name = "peerban"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -16,6 +16,7 @@ log = "0.4.21"
 async-trait = "0.1.79"
 clap = { version = "4.5.4", features = ["derive", "env"] }
 regex = "1.10.4"
+chrono = "0.4.38"
 
 [profile.opt]
 inherits = "release"

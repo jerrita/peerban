@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use clap::Parser;
 use log::{error, info, warn};
 
@@ -31,7 +33,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var("RUST_LOG", "info");
     }
-    env_logger::init();
+    env_logger::builder()
+        .format(|buf, record| {
+            writeln!(buf, "{} [{}] {}",
+                     chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+                     match record.level() {
+                         log::Level::Error => "\x1b[31mERROR\x1b[0m",
+                         log::Level::Warn => "\x1b[33mWARN\x1b[0m",
+                         log::Level::Info => "\x1b[32mINFO\x1b[0m",
+                         log::Level::Debug => "\x1b[34mDEBUG\x1b[0m",
+                         log::Level::Trace => "\x1b[37mTRACE\x1b[0m",
+                     },
+                     record.args()
+            )
+        })
+        .init();
 
     let args = Args::parse();
     if args.backend != "qb" {
