@@ -11,6 +11,7 @@ mod torrent;
 mod peer;
 mod rules;
 mod daemon;
+mod utils;
 
 #[derive(Parser, Debug)]
 struct Args {

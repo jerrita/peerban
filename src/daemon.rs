@@ -2,14 +2,12 @@ use std::time::Instant;
 
 use anyhow::Result;
 use log::{debug, info, warn};
-use regex::Regex;
 
 use crate::backend::Backend;
 use crate::peer::BannedPeer;
 use crate::rules::preload::PREDEFINED_RULES;
 use crate::rules::Rule;
-
-const PT_KEYWORDS: [&str; 5] = ["?passkey=", "?authkey=", "?secure=", "?credential=", "private"];
+use crate::utils;
 
 struct Statistic {
     pub torrents: u64,
@@ -51,7 +49,7 @@ impl Daemon {
             self.backend.ban_clear().await?;
             info!("[startup] jail cleared.");
         }
-        let re = Regex::new(r"([a-zA-Z0-9]{32})").unwrap();
+
         loop {
             let mut flag = false;
             let torrents = self.backend.get_uploading_torrents().await?;
@@ -59,12 +57,10 @@ impl Daemon {
             stat.peers = 0;
             for torrent in torrents {
                 debug!("Torrent: {}({})", torrent.name, torrent.hash);
-                if !self.pt {
-                    let lower_tracker = torrent.tracker.to_lowercase();
-                    if PT_KEYWORDS.iter().any(|&keyword| lower_tracker.contains(keyword)) || re.is_match(&lower_tracker) {
-                        debug!("Private tracker detect.");
-                        continue;
-                    }
+
+                if !self.pt && utils::is_tracker_pt(torrent.tracker.as_str()) {
+                    debug!("Private tracker torrent detected, skip.");
+                    continue;
                 }
 
                 let peers = self.backend.get_peers(&torrent.hash).await?;
