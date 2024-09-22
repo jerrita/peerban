@@ -60,6 +60,7 @@ impl Backend for QBitBackend {
         }
         let resp = client
             .get(&format!("{}/app/version", self.endpoint))
+            .header("Cookie", self.cookie.clone().unwrap())
             .send()
             .await?;
         let version = resp.text().await?;
