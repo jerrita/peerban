@@ -19,6 +19,7 @@ lazy_static!(
         "idStartsWith@-GT0003",
         "idStartsWith@-DT",
         "idStartsWith@-HP",
+        "idStartsWith@A2",
         "idContains@cacao",
 
         "nameStartsWith@-XL",
